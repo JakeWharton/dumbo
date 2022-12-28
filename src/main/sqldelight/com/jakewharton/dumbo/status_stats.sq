@@ -1,0 +1,14 @@
+CREATE TABLE status_stats(
+	id BIGSERIAL AS VALUE PRIMARY KEY,
+	status_id BIGINT NOT NULL REFERENCES statuses(id),
+	replies_count BIGINT NOT NULL DEFAULT 0,
+	reblogs_count BIGINT NOT NULL DEFAULT 0,
+	favourites_count BIGINT NOT NULL DEFAULT 0,
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
+);
+
+insert:
+INSERT INTO status_stats(status_id, replies_count, reblogs_count, favourites_count, created_at, updated_at)
+VALUES (? ,?, ?, ?, :timestamp, :timestamp)
+;

@@ -1,0 +1,33 @@
+CREATE TABLE statuses(
+	id BIGSERIAL AS VALUE PRIMARY KEY,
+	uri CHARACTER VARYING,
+	text TEXT NOT NULL DEFAULT '',
+	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	in_reply_to_id BIGINT,
+	reblog_of_id BIGINT,
+	url CHARACTER VARYING,
+	reply BOOLEAN NOT NULL DEFAULT 0,
+	language CHARACTER VARYING,
+	conversation_id BIGINT REFERENCES conversations(id),
+	account_id BIGINT NOT NULL, -- TODO references?
+	application_id BIGINT,
+	in_reply_to_account_id BIGINT, -- TODO references?
+	poll_id BIGINT, -- TODO references?
+	deleted_at TIMESTAMP WITHOUT TIME ZONE,
+	edited_at TIMESTAMP WITHOUT TIME ZONE,
+	ordered_media_attachment_ids BIGINT[],
+
+	CONSTRAINT fk_in_reply_to_id
+		FOREIGN KEY(in_reply_to_id)
+		REFERENCES statuses(id),
+
+	CONSTRAINT fk_reblog_of_id
+		FOREIGN KEY(reblog_of_id)
+		REFERENCES statuses(id)
+);
+
+insert:
+INSERT INTO statuses(id, uri, text, created_at, updated_at, language, conversation_id, account_id, application_id)
+VALUES (?, ?, ?, :timestamp, :timestamp, ?, ?, ?, ?)
+;

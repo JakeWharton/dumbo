@@ -1,0 +1,54 @@
+buildscript {
+	repositories {
+		mavenCentral()
+		maven {
+			url 'https://oss.sonatype.org/content/repositories/snapshots/'
+		}
+	}
+	dependencies {
+		classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.20'
+		classpath 'org.jetbrains.kotlin:kotlin-serialization:1.7.20'
+		classpath 'app.cash.sqldelight:gradle-plugin:2.0.0-SNAPSHOT'
+	}
+}
+
+apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+
+apply plugin: 'app.cash.sqldelight'
+sqldelight {
+	MastodonDb {
+		packageName = 'com.jakewharton.dumbo'
+		schemaOutputDirectory = file('src/main/sqldelight/databases')
+		dialect('app.cash.sqldelight:postgresql-dialect:2.0.0-SNAPSHOT')
+	}
+}
+
+apply plugin: 'application'
+application {
+	mainClass = 'com.jakewharton.dumbo.Main'
+}
+
+dependencies {
+	implementation 'com.github.ajalt.clikt:clikt:3.5.0'
+	implementation 'app.cash.sqldelight:jdbc-driver:2.0.0-SNAPSHOT'
+	implementation 'org.postgresql:postgresql:42.5.0'
+	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
+	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.4.1'
+	implementation 'com.squareup.okio:okio:3.2.0'
+	implementation 'org.tomlj:tomlj:1.1.0'
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		url 'https://oss.sonatype.org/content/repositories/snapshots/'
+	}
+}
+
+tasks.named("distTar").configure { task ->
+	task.enabled = false
+}
+tasks.named("assemble").configure { task ->
+	task.dependsOn(tasks.named("installDist"))
+}
