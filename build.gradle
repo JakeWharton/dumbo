@@ -30,7 +30,7 @@ application {
 }
 
 dependencies {
-	implementation 'com.github.ajalt.clikt:clikt:3.5.0'
+	implementation 'com.github.ajalt.clikt:clikt:3.5.1'
 	implementation 'app.cash.sqldelight:jdbc-driver:2.0.0-SNAPSHOT'
 	implementation 'org.postgresql:postgresql:42.5.0'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
