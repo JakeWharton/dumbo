@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.help
 import com.github.ajalt.clikt.parameters.options.convert
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
@@ -18,6 +19,7 @@ fun main(vararg args: String) {
 }
 
 private class DumboCommand : CliktCommand(name = "dumbo") {
+	private val debug by option(hidden = true).flag()
 	private val config by option("-c", "--config", metavar = "")
 		.help("TOML file with configuration options")
 		.path(mustExist = true, canBeDir = false)
@@ -35,6 +37,6 @@ private class DumboCommand : CliktCommand(name = "dumbo") {
 		.path(mustExist = true, canBeFile = false)
 
 	override fun run() {
-		DumboApp(config, accountId, applicationId).run(archiveDir)
+		DumboApp(config, accountId, applicationId).run(archiveDir, debug = debug)
 	}
 }

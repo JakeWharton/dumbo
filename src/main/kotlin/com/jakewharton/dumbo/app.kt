@@ -19,7 +19,13 @@ class DumboApp(
 	private val accountId: Long,
 	private val applicationId: Long?,
 ) {
-	fun run(archiveDir: Path) {
+	fun run(archiveDir: Path, debug: Boolean = false) {
+		fun debug(body: () -> Any) {
+			if (debug) {
+				println("DEBUG ${body()}")
+			}
+		}
+
 		val tweets = archiveDir.resolve("data/tweets.js")
 		val opLogPath = archiveDir.resolve("dumbo_log.txt")
 
@@ -32,6 +38,7 @@ class DumboApp(
 		val scanner = Scanner(System.`in`)
 		val entries = Json.decodeFromBufferedSource(ListSerializer(TweetEntry.serializer()), source)
 			.sorted()
+		debug { "Loaded ${entries.size} tweets" }
 
 		val connection = PostgresConnection(
 			host = config.database.host,
@@ -43,26 +50,28 @@ class DumboApp(
 		withDatabase(connection) { db ->
 			for (entry in entries) {
 				val opMap = opLogPath.toOpMap()
+				debug { "Op map: $opMap" }
+
 				val seenIdsForReplies = opMap.filterValues { it != null }.keys
 
 				if (entry.tweet.full_text.startsWith("RT @")) {
-					// Do not keep retweets of tweets from other authors.
+					debug { "[${entry.tweet.id}] Do not keep retweets of tweets from other authors" }
 					continue
 				}
 				if (entry.tweet.full_text.startsWith("@")) {
-					// Do not keep @mentions to individual accounts.
+					debug { "[${entry.tweet.id}] Do not keep @mentions to individual accounts" }
 					continue
 				}
 				if (entry.tweet.in_reply_to_status_id != null && entry.tweet.in_reply_to_status_id !in seenIdsForReplies) {
-					// Do not keep replies to tweets which are not my own.
+					debug { "[${entry.tweet.id}] Do not keep replies to tweets which are not my own or which we explicitly skipped" }
 					continue
 				}
 				if (entry.tweet.id in config.tweets.ignoredIds) {
-					// Do not keep tweets explicitly ignored.
+					debug { "[${entry.tweet.id}] Do not keep tweets explicitly ignored" }
 					continue
 				}
 				if (entry.tweet.id in opMap) {
-					// We have already processed this Tweet.
+					debug { "[${entry.tweet.id}] We have already processed this Tweet" }
 					continue
 				}
 
@@ -81,6 +90,7 @@ class DumboApp(
 							val now = LocalDateTime.now()
 
 							val conversationId = db.conversationsQueries.create(now).executeAsOne()
+							debug { "Conversation ID: $conversationId" }
 
 							db.statusesQueries.insert(
 								id = toot.id,
