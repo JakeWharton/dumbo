@@ -14,9 +14,22 @@ data class Toot(
 ) {
 	companion object {
 		fun fromTweet(tweet: Tweet): Toot {
+			val text = buildString {
+				var index = 0
+				for (url in tweet.entities.urls) {
+					if (url.indices.first > index) {
+						append(tweet.full_text.substring(index, url.indices.first))
+					}
+					append(url.expanded_url)
+					index = url.indices.last
+				}
+				if (index < tweet.full_text.length) {
+					append(tweet.full_text.substring(index))
+				}
+			}
 			return Toot(
 				id = Statuses.Id(snowflakeId("statuses", tweet.created_at)),
-				text = tweet.full_text,
+				text = text,
 				posted = tweet.created_at,
 				language = tweet.lang,
 				favoriteCount = tweet.favorite_count,
