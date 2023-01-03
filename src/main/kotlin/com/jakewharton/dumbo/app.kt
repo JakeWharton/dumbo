@@ -41,10 +41,10 @@ class DumboApp(
 			password = config.database.password,
 		)
 		withDatabase(connection) { db ->
-			val seenIdsForReplies = mutableSetOf<String?>(null)
-			// TODO how to re-populate this on resume?
-
 			for (entry in entries) {
+				val opMap = opLogPath.toOpMap()
+				val seenIdsForReplies = opMap.filterValues { it != null }.keys
+
 				if (entry.tweet.full_text.startsWith("RT @")) {
 					// Do not keep retweets of tweets from other authors.
 					continue
@@ -53,7 +53,7 @@ class DumboApp(
 					// Do not keep @mentions to individual accounts.
 					continue
 				}
-				if (entry.tweet.in_reply_to_status_id !in seenIdsForReplies) {
+				if (entry.tweet.in_reply_to_status_id != null && entry.tweet.in_reply_to_status_id !in seenIdsForReplies) {
 					// Do not keep replies to tweets which are not my own.
 					continue
 				}
@@ -61,8 +61,7 @@ class DumboApp(
 					// Do not keep tweets explicitly ignored.
 					continue
 				}
-
-				if (opLogPath.containsId(entry.tweet.id)) {
+				if (entry.tweet.id in opMap) {
 					// We have already processed this Tweet.
 					continue
 				}
@@ -103,12 +102,11 @@ class DumboApp(
 							)
 						}
 
-						opLogPath.appendId(entry.tweet.id)
-						seenIdsForReplies += entry.tweet.id
+						opLogPath.appendId(entry.tweet.id, toot.id)
 					}
 
 					inputNo -> {
-						opLogPath.appendId(entry.tweet.id)
+						opLogPath.appendId(entry.tweet.id, null)
 					}
 
 					inputSkip -> Unit // Nothing to do!
