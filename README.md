@@ -1,6 +1,6 @@
 # Dumbo Tweet Importer
 
-Import a Twitter archive into a Mastodon database.
+Import a Twitter archive into a Mastodon account.
 
 | Twitter                | Mastodon              |
 |------------------------|-----------------------|
