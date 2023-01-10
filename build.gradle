@@ -17,10 +17,12 @@ apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 apply plugin: 'app.cash.sqldelight'
 sqldelight {
-	MastodonDb {
-		packageName = 'com.jakewharton.dumbo'
-		schemaOutputDirectory = file('src/main/sqldelight/databases')
-		dialect('app.cash.sqldelight:postgresql-dialect:2.0.0-SNAPSHOT')
+	databases {
+		MastodonDb {
+			packageName = 'com.jakewharton.dumbo'
+			schemaOutputDirectory = file('src/main/sqldelight/databases')
+			dialect('app.cash.sqldelight:postgresql-dialect:2.0.0-SNAPSHOT')
+		}
 	}
 }
 
