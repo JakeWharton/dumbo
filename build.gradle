@@ -37,7 +37,7 @@ dependencies {
 	implementation 'org.postgresql:postgresql:42.5.1'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.4.1'
-	implementation 'com.squareup.okio:okio:3.2.0'
+	implementation 'com.squareup.okio:okio:3.3.0'
 	implementation 'org.tomlj:tomlj:1.1.0'
 
 	testImplementation 'junit:junit:4.13.2'
