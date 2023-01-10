@@ -6,12 +6,10 @@ Import a Twitter archive into a Mastodon database.
 |------------------------|-----------------------|
 | ![](example-tweet.png) | ![](example-toot.png) |
 
-The Mastodon API does not allow inserting posts in the past. This tool requires
-a connection to the backing PostgreSQL database in order to write directly to it.
-
 ## Usage
 
 Dumbo requires modifications be made to your Masotodon server.
+The Mastodon API does not allow inserting posts in the past.
 In order to write statuses which occur in the past, a `created_at` parameter is needed.
 
 ### Modifying Official Mastodon
