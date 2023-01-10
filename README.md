@@ -57,6 +57,9 @@ If you are using Mastodon v4 (or newer) you may need to adjust them.
 
 Apply these patches and then restart the app or container.
 
+When you are completely done with your import you can undo these changes.
+Either revert manually, reinstall the app, or recreate the container.
+
 ### Running Dumbo
 
 TODO
