@@ -1,30 +1,101 @@
 package com.jakewharton.dumbo
 
 import java.nio.file.Path
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.ZoneOffset.UTC
 import java.util.Scanner
+import java.util.UUID
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 import kotlin.system.exitProcess
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
+import okhttp3.HttpUrl
 import okio.ByteString.Companion.encodeUtf8
 import okio.buffer
 import okio.source
 
 @OptIn(ExperimentalSerializationApi::class)
 class DumboApp(
-	private val config: DumboConfig,
-	private val accountId: Long,
-	private val applicationId: Long?,
+	private val api: MastodonApi,
 ) {
-	fun run(archiveDir: Path, debug: Boolean = false) {
+	suspend fun run(
+		host: HttpUrl,
+		archiveDir: Path,
+		debug: Boolean = false,
+	) {
 		fun debug(body: () -> Any) {
 			if (debug) {
 				println("DEBUG ${body()}")
 			}
 		}
+
+		val scanner = Scanner(System.`in`)
+
+		val authJson = Json { prettyPrint = true }
+		val dumboAuthPath = archiveDir.resolve("dumbo_auth.json")
+		var auth: MastodonAuth
+		if (dumboAuthPath.exists()) {
+			val jsonObject = authJson.decodeFromString(JsonObject.serializer(), dumboAuthPath.readText())
+			val serializer = if ("access_token" in jsonObject) {
+				MastodonAuthStage2.serializer()
+			} else {
+				MastodonAuthStage1.serializer()
+			}
+			auth = authJson.decodeFromJsonElement(serializer, jsonObject)
+		} else {
+			val createApplicationEntity = api.createApplication(
+				clientName = "Dumbo Tweet Importer",
+				redirectUris = "urn:ietf:wg:oauth:2.0:oob",
+				scopes = "read write",
+				website = "https://github.com/JakeWharton/dumbo",
+			)
+			auth = MastodonAuthStage1(
+				client_id = createApplicationEntity.client_id,
+				client_secret = createApplicationEntity.client_secret,
+			)
+			dumboAuthPath.writeText(authJson.encodeToString(auth))
+		}
+		if (auth is MastodonAuthStage1) {
+			val authUrl = host.newBuilder("oauth/authorize")!!
+				.addQueryParameter("client_id", auth.client_id)
+				.addQueryParameter("scope", "read write")
+				.addQueryParameter("redirect_uri", "urn:ietf:wg:oauth:2.0:oob")
+				.addQueryParameter("response_type", "code")
+				.build()
+			println()
+			println("Visit $authUrl in your browser")
+			print("Paste resulting code: ")
+			val code = scanner.next()!!
+			println()
+
+			val createTokenEntity = api.createOauthToken(
+				clientId = auth.client_id,
+				clientSecret = auth.client_secret,
+				redirectUri = "urn:ietf:wg:oauth:2.0:oob",
+				grantType = "authorization_code",
+				code = code,
+				scope = "read write"
+			)
+			check(createTokenEntity.token_type == "Bearer")
+			check("write" in createTokenEntity.scope.split(" "))
+			auth = MastodonAuthStage2(
+				client_id = auth.client_id,
+				client_secret = auth.client_secret,
+				access_token = createTokenEntity.access_token,
+			)
+			dumboAuthPath.writeText(authJson.encodeToString(auth))
+		}
+		check(auth is MastodonAuthStage2)
+		val authorization = "Bearer ${auth.access_token}"
+
+		val id = api.verifyCredentials(authorization).id
+		debug { "User ID: $id" }
+
 
 		val tweets = archiveDir.resolve("data/tweets.js")
 		val opLogPath = archiveDir.resolve("dumbo_log.txt")
@@ -35,19 +106,10 @@ class DumboApp(
 		}
 		source.skip(tweetsPrefix.size.toLong())
 
-		val scanner = Scanner(System.`in`)
 		val entries = Json.decodeFromBufferedSource(ListSerializer(TweetEntry.serializer()), source)
 			.sorted()
 		debug { "Loaded ${entries.size} tweets" }
 
-		val connection = PostgresConnection(
-			host = config.database.host,
-			port = config.database.port,
-			database = config.database.name,
-			user = config.database.username,
-			password = config.database.password,
-		)
-		withDatabase(connection) { db ->
 			for (entry in entries) {
 				val opMap = opLogPath.toOpMap()
 				debug { "Op map: $opMap" }
@@ -66,10 +128,6 @@ class DumboApp(
 					debug { "[${entry.tweet.id}] Do not keep replies to tweets which are not my own or which we explicitly skipped" }
 					continue
 				}
-				if (entry.tweet.id in config.tweets.ignoredIds) {
-					debug { "[${entry.tweet.id}] Do not keep tweets explicitly ignored" }
-					continue
-				}
 				if (entry.tweet.id in opMap) {
 					debug { "[${entry.tweet.id}] We have already processed this Tweet" }
 					continue
@@ -86,33 +144,15 @@ class DumboApp(
 				print("Post? ($inputYes, $inputNo, $inputSkip): ")
 				when (val input = scanner.next()) {
 					inputYes -> {
-						db.transaction {
-							val now = LocalDateTime.now()
+						val statusEntity = api.createStatus(
+							authorization = authorization,
+							idempotency = UUID.randomUUID().toString(),
+							status = toot.text,
+							language = toot.language,
+							createdAt = toot.posted.atOffset(UTC).toString()
+						)
 
-							val conversationId = db.conversationsQueries.create(now).executeAsOne()
-							debug { "Conversation ID: $conversationId" }
-
-							db.statusesQueries.insert(
-								id = toot.id,
-								uri = "https://mastodon.jakewharton.com/users/jw/statuses/${toot.id}",
-								text = toot.text,
-								timestamp = LocalDateTime.ofInstant(toot.posted, ZoneOffset.UTC),
-								language = "en",
-								conversation_id = conversationId,
-								account_id = accountId,
-								application_id = applicationId,
-							)
-
-							db.status_statsQueries.insert(
-								status_id = toot.id,
-								replies_count = 0L,
-								reblogs_count = toot.reblogCount.toLong(),
-								favourites_count = toot.favoriteCount.toLong(),
-								timestamp = now,
-							)
-						}
-
-						opLogPath.appendId(entry.tweet.id, toot.id)
+						opLogPath.appendId(entry.tweet.id, statusEntity.id)
 					}
 
 					inputNo -> {
@@ -128,7 +168,6 @@ class DumboApp(
 
 				println("-------")
 			}
-		}
 	}
 
 	private companion object {

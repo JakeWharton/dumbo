@@ -6,20 +6,20 @@ import kotlin.io.path.exists
 import kotlin.io.path.readLines
 import kotlin.io.path.writeText
 
-fun Path.toOpMap(): Map<String, Statuses.Id?> {
+fun Path.toOpMap(): Map<String, String?> {
 	if (!exists()) return emptyMap()
 	return readLines().associate { line ->
 		val split = line.split(" ", limit = 2)
-		split[0] to split.getOrNull(1)?.let { Statuses.Id(it.toLong()) }
+		split[0] to split.getOrNull(1)
 	}
 }
 
-fun Path.appendId(tweetId: String, tootId: Statuses.Id?) {
+fun Path.appendId(tweetId: String, statusId: String?) {
 	val output = buildString {
 		append(tweetId)
-		if (tootId != null) {
+		if (statusId != null) {
 			append(' ')
-			append(tootId.id)
+			append(statusId)
 		}
 		append('\n')
 	}

@@ -52,7 +52,6 @@ class MastodonTest {
 			geo = null,
 		)
 		val expected = Toot(
-			id = Statuses.Id(85836406784048428L),
 			text = "SeriesGuide beta (https://market.android.com/search?q=seriesguide) is now using ActionBarSherlock. Please support and fork!! https://github.com/UweTrottmann/SeriesGuide",
 			posted = Instant.parse("2011-07-04T06:07:05Z"),
 			language = "en",

@@ -11,6 +11,56 @@ a connection to the backing PostgreSQL database in order to write directly to it
 
 ## Usage
 
+Dumbo requires modifications be made to your Masotodon server.
+In order to write statuses which occur in the past, a `created_at` parameter is needed.
+
+### Modifying Official Mastodon
+
+The following changes should be applied to the Mastodon app.
+Note: These diffs were produced against Mastodon v3.5.3.
+If you are using Mastodon v4 (or newer) you may need to adjust them.
+
+`app/controllers/api/v1/statuses_controller.rb`:
+```diff
+@@ -46,4 +46,5 @@
+       visibility: status_params[:visibility],
+       language: status_params[:language],
++      created_at: status_params[:created_at],
+       scheduled_at: status_params[:scheduled_at],
+       application: doorkeeper_token.application,
+@@ -110,4 +111,5 @@
+       :visibility,
+       :language,
++      :created_at,
+       :scheduled_at,
+       media_ids: [],
+```
+
+`app/services/post_status_service.rb`:
+```diff
+@@ -95,6 +95,8 @@
+     Trends.tags.register(@status)
+     LinkCrawlWorker.perform_async(@status.id)
+-    DistributionWorker.perform_async(@status.id)
+-    ActivityPub::DistributionWorker.perform_async(@status.id)
++    if not @options[:created_at]
++      DistributionWorker.perform_async(@status.id)
++      ActivityPub::DistributionWorker.perform_async(@status.id)
++    end
+     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
+   end
+@@ -168,4 +170,5 @@
+       visibility: @visibility,
+       language: valid_locale_cascade(@options[:language], @account.user&.preferred_posting_language, I18n.default_locale),
++      created_at: @options[:created_at],
+       application: @options[:application],
+       rate_limit: @options[:with_rate_limit],
+```
+
+Apply these patches and then restart the app or container.
+
+### Running Dumbo
+
 TODO
 
 # License

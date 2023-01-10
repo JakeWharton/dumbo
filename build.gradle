@@ -8,23 +8,11 @@ buildscript {
 	dependencies {
 		classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0'
 		classpath 'org.jetbrains.kotlin:kotlin-serialization:1.8.0'
-		classpath 'app.cash.sqldelight:gradle-plugin:2.0.0-SNAPSHOT'
 	}
 }
 
 apply plugin: 'org.jetbrains.kotlin.jvm'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
-
-apply plugin: 'app.cash.sqldelight'
-sqldelight {
-	databases {
-		MastodonDb {
-			packageName = 'com.jakewharton.dumbo'
-			schemaOutputDirectory = file('src/main/sqldelight/databases')
-			dialect('app.cash.sqldelight:postgresql-dialect:2.0.0-SNAPSHOT')
-		}
-	}
-}
 
 apply plugin: 'application'
 application {
@@ -33,10 +21,11 @@ application {
 
 dependencies {
 	implementation 'com.github.ajalt.clikt:clikt:3.5.1'
-	implementation 'app.cash.sqldelight:jdbc-driver:2.0.0-SNAPSHOT'
-	implementation 'org.postgresql:postgresql:42.5.1'
+	implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+	implementation 'com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:0.8.0'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.4.1'
+	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
 	implementation 'com.squareup.okio:okio:3.3.0'
 	implementation 'org.tomlj:tomlj:1.1.0'
 
