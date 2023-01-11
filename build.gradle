@@ -33,9 +33,9 @@ repositories {
 	mavenCentral()
 }
 
-tasks.named("distTar").configure { task ->
+tasks.named('distTar').configure { task ->
 	task.enabled = false
 }
-tasks.named("assemble").configure { task ->
-	task.dependsOn(tasks.named("installDist"))
+tasks.named('assemble').configure { task ->
+	task.dependsOn(tasks.named('installDist'))
 }
