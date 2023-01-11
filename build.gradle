@@ -1,9 +1,6 @@
 buildscript {
 	repositories {
 		mavenCentral()
-		maven {
-			url 'https://oss.sonatype.org/content/repositories/snapshots/'
-		}
 	}
 	dependencies {
 		classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0'
@@ -34,9 +31,6 @@ dependencies {
 
 repositories {
 	mavenCentral()
-	maven {
-		url 'https://oss.sonatype.org/content/repositories/snapshots/'
-	}
 }
 
 tasks.named("distTar").configure { task ->
