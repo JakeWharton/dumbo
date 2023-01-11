@@ -1,5 +1,6 @@
 package com.jakewharton.dumbo
 
+import com.jakewharton.dumbo.Tweet.MentionEntity
 import com.jakewharton.dumbo.Tweet.UrlEntity
 import java.nio.file.Path
 import java.time.Instant
@@ -44,11 +45,19 @@ class TwitterArchive(
 				createdAt = it.tweet.created_at,
 				language = it.tweet.lang,
 				text = it.tweet.full_text,
-				entities = it.tweet.entities.urls.map { entity ->
-					UrlEntity(
-						url = entity.expanded_url,
-						indices = entity.indices,
-					)
+				entities = buildList {
+					this += it.tweet.entities.urls.map { entity ->
+						UrlEntity(
+							url = entity.expanded_url,
+							indices = entity.indices,
+						)
+					}
+					this += it.tweet.entities.user_mentions.map { entity ->
+						MentionEntity(
+							username = entity.screen_name,
+							indices = entity.indices,
+						)
+					}
 				}
 			)
 		}.sorted()
@@ -83,10 +92,16 @@ data class Tweet(
 			.thenByDescending(Tweet::id)
 	}
 
-	sealed interface Entity
+	sealed interface Entity {
+		val indices: IntRange
+	}
 	data class UrlEntity(
 		val url: String,
-		val indices: IntRange,
+		override val indices: IntRange,
+	) : Entity
+	data class MentionEntity(
+		val username: String,
+		override val indices: IntRange,
 	) : Entity
 }
 

@@ -1,5 +1,6 @@
 package com.jakewharton.dumbo
 
+import com.jakewharton.dumbo.Tweet.MentionEntity
 import com.jakewharton.dumbo.Tweet.UrlEntity
 import java.time.Instant
 import kotlin.test.assertFailsWith
@@ -21,6 +22,32 @@ class MastodonTest {
 				UrlEntity(
 					url = "https://github.com/UweTrottmann/SeriesGuide",
 					indices = 97..116,
+				),
+			),
+		)
+		val expected = Toot(
+			text = "SeriesGuide beta (https://market.android.com/search?q=seriesguide) is now using ActionBarSherlock. Please support and fork!! https://github.com/UweTrottmann/SeriesGuide",
+			posted = Instant.parse("2011-07-04T06:07:05Z"),
+			language = "en",
+		)
+		val actual = Toot.fromTweet(tweet, emptyMap())
+		assertEquals(expected, actual)
+	}
+
+	@Test fun urlsOutOfOrderReplaced() {
+		val tweet = Tweet(
+			id = "87764348256272384",
+			createdAt = Instant.parse("2011-07-04T06:07:05Z"),
+			language = "en",
+			text = "SeriesGuide beta (http://t.co/Ysy68q4) is now using ActionBarSherlock. Please support and fork!! http://t.co/CxvKWoE",
+			entities = listOf(
+				UrlEntity(
+					url = "https://github.com/UweTrottmann/SeriesGuide",
+					indices = 97..116,
+				),
+				UrlEntity(
+					url = "https://market.android.com/search?q=seriesguide",
+					indices = 18..37,
 				),
 			),
 		)
@@ -89,5 +116,27 @@ class MastodonTest {
 			Toot.fromTweet(tweet, replyMap)
 		}
 		assertEquals("Unable to map tweet 4 replying to 3 without tootMap entry", t.message)
+	}
+
+	@Test fun mentionsReplacedWithMastodonConvention() {
+		val tweet = Tweet(
+			id = "91268136095068160",
+			createdAt = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			text = "Got psuedo-confirmation from @retomeier that the action bar will not be part of future compat library revs! Good news for ActionBarSherlock.",
+			entities = listOf(
+				MentionEntity(
+					username = "retomeier",
+					indices = 29..39,
+				)
+			),
+		)
+		val expected = Toot(
+			text = "Got psuedo-confirmation from @retomeier@twitter.com that the action bar will not be part of future compat library revs! Good news for ActionBarSherlock.",
+			posted = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+		)
+		val actual = Toot.fromTweet(tweet, emptyMap())
+		assertEquals(expected, actual)
 	}
 }
