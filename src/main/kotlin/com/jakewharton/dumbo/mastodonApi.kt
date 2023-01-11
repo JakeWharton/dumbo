@@ -41,6 +41,7 @@ interface MastodonApi {
 		@Field("status") status: String,
 		@Field("language") language: String?,
 		@Field("created_at") createdAt: String,
+		@Field("in_reply_to_id") inReplyToId: String?,
 	): StatusEntity
 }
 

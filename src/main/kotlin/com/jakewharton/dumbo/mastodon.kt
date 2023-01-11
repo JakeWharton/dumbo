@@ -7,9 +7,10 @@ data class Toot(
 	val text: String,
 	val posted: Instant,
 	val language: String,
+	val inReplyToId: String? = null,
 ) {
 	companion object {
-		fun fromTweet(tweet: Tweet): Toot {
+		fun fromTweet(tweet: Tweet, tootMap: Map<String, String?>): Toot {
 			val text = buildString {
 				var index = 0
 				for (entity in tweet.entities) {
@@ -27,10 +28,18 @@ data class Toot(
 					append(tweet.text.substring(index))
 				}
 			}
+			val inReplyToId = if (tweet.inReplyToId == null) {
+				null
+			} else {
+				checkNotNull(tootMap[tweet.inReplyToId]) {
+					"Unable to map tweet ${tweet.id} replying to ${tweet.inReplyToId} without tootMap entry"
+				}
+			}
 			return Toot(
 				text = text,
 				posted = tweet.createdAt,
 				language = tweet.language,
+				inReplyToId = inReplyToId,
 			)
 		}
 	}

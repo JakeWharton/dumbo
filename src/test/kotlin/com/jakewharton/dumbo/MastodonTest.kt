@@ -2,12 +2,12 @@ package com.jakewharton.dumbo
 
 import com.jakewharton.dumbo.Tweet.UrlEntity
 import java.time.Instant
-import kotlinx.serialization.json.JsonNull
+import kotlin.test.assertFailsWith
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MastodonTest {
-	@Test fun fromTweet1() {
+	@Test fun urlsReplaced() {
 		val tweet = Tweet(
 			id = "87764348256272384",
 			createdAt = Instant.parse("2011-07-04T06:07:05Z"),
@@ -29,7 +29,65 @@ class MastodonTest {
 			posted = Instant.parse("2011-07-04T06:07:05Z"),
 			language = "en",
 		)
-		val actual = Toot.fromTweet(tweet)
+		val actual = Toot.fromTweet(tweet, emptyMap())
 		assertEquals(expected, actual)
+	}
+
+	@Test fun replyMapHit() {
+		val replyMap = mapOf(
+			"1" to null,
+			"2" to "1234",
+		)
+		val tweet = Tweet(
+			id = "3",
+			inReplyToId = "2",
+			createdAt = Instant.parse("2011-07-04T06:07:05Z"),
+			language = "en",
+			text = "Just setting up my Dumbo",
+		)
+		val expected = Toot(
+			text = "Just setting up my Dumbo",
+			posted = Instant.parse("2011-07-04T06:07:05Z"),
+			language = "en",
+			inReplyToId = "1234",
+		)
+		val actual = Toot.fromTweet(tweet, replyMap)
+		assertEquals(expected, actual)
+	}
+
+	@Test fun replyMapExplicitNullThrows() {
+		val replyMap = mapOf(
+			"1" to null,
+			"2" to "1234",
+		)
+		val tweet = Tweet(
+			id = "3",
+			inReplyToId = "1",
+			createdAt = Instant.parse("2011-07-04T06:07:05Z"),
+			language = "en",
+			text = "Just setting up my Dumbo",
+		)
+		val t = assertFailsWith<IllegalStateException> {
+			Toot.fromTweet(tweet, replyMap)
+		}
+		assertEquals("Unable to map tweet 3 replying to 1 without tootMap entry", t.message)
+	}
+
+	@Test fun replyMapMissThrows() {
+		val replyMap = mapOf(
+			"1" to null,
+			"2" to "1234",
+		)
+		val tweet = Tweet(
+			id = "4",
+			inReplyToId = "3",
+			createdAt = Instant.parse("2011-07-04T06:07:05Z"),
+			language = "en",
+			text = "Just setting up my Dumbo",
+		)
+		val t = assertFailsWith<IllegalStateException> {
+			Toot.fromTweet(tweet, replyMap)
+		}
+		assertEquals("Unable to map tweet 4 replying to 3 without tootMap entry", t.message)
 	}
 }

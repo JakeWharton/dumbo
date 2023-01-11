@@ -100,7 +100,7 @@ class DumboApp(
 				val opMap = opLogPath.toOpMap()
 				debug { "Op map: $opMap" }
 
-				val seenIdsForReplies = opMap.filterValues { it != null }.keys
+				val postedTweetIds = opMap.filterValues { it != null }.keys
 
 				if (tweet.isRetweet) {
 					debug { "[${tweet.id}] Do not keep retweets of tweets from other authors" }
@@ -110,7 +110,7 @@ class DumboApp(
 					debug { "[${tweet.id}] Do not keep @mentions to individual accounts" }
 					continue
 				}
-				if (tweet.inReplyToId != null && tweet.inReplyToId !in seenIdsForReplies) {
+				if (tweet.inReplyToId != null && tweet.inReplyToId !in postedTweetIds) {
 					debug { "[${tweet.id}] Do not keep replies to tweets which are not my own or which we explicitly skipped" }
 					continue
 				}
@@ -119,7 +119,7 @@ class DumboApp(
 					continue
 				}
 
-				val toot = Toot.fromTweet(tweet)
+				val toot = Toot.fromTweet(tweet, opMap)
 
 				println("TWEET: ${tweet.url}")
 				println(tweet)
@@ -135,7 +135,8 @@ class DumboApp(
 							idempotency = UUID.randomUUID().toString(),
 							status = toot.text,
 							language = toot.language,
-							createdAt = toot.posted.atOffset(UTC).toString()
+							createdAt = toot.posted.atOffset(UTC).toString(),
+							inReplyToId = toot.inReplyToId,
 						)
 
 						opLogPath.appendId(tweet.id, statusEntity.id)
