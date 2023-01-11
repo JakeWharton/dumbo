@@ -75,7 +75,10 @@ class MastodonAuthenticator(
 		}
 
 		check(auth is MastodonAuthStage2)
-		return "Bearer ${auth.access_token}"
+		val header = "Bearer ${auth.access_token}"
+		api.verifyCredentials(header)
+
+		return header
 	}
 
 	private companion object {

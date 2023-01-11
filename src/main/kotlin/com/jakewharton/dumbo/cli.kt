@@ -17,9 +17,11 @@ import java.nio.file.FileSystems
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import okhttp3.HttpUrl
-import okhttp3.MediaType
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import okhttp3.logging.HttpLoggingInterceptor.Level.BASIC
 import retrofit2.Retrofit
 import retrofit2.create
 
@@ -33,7 +35,7 @@ private class DumboCommand(
 	private val debug by option(hidden = true).flag()
 	private val host by option("--host", metavar = "URL")
 		.help("Mastodon server host")
-		.convert { HttpUrl.get(it) }
+		.convert { it.toHttpUrl() }
 		.required()
 	private val archiveDir by argument(name = "ARCHIVE")
 		.help("Directory of extracted Twitter archive")
@@ -42,11 +44,16 @@ private class DumboCommand(
 	@OptIn(ExperimentalSerializationApi::class)
 	override fun run() {
 		val okhttp = OkHttpClient.Builder()
+			.apply {
+				if (debug) {
+					addInterceptor(HttpLoggingInterceptor(::println).setLevel(BASIC))
+				}
+			}
 			.build()
 		val json = Json {
 			ignoreUnknownKeys = true
 		}
-		val converterFactory = json.asConverterFactory(MediaType.parse("application/json")!!)
+		val converterFactory = json.asConverterFactory("application/json".toMediaType())
 
 		val retrofit = Retrofit.Builder()
 			.client(okhttp)
@@ -60,8 +67,8 @@ private class DumboCommand(
 				DumboApp(api).run(host, archiveDir, debug = debug)
 			}
 		} finally {
-			okhttp.connectionPool().evictAll()
-			okhttp.dispatcher().executorService().shutdown()
+			okhttp.connectionPool.evictAll()
+			okhttp.dispatcher.executorService.shutdown()
 		}
 	}
 }
