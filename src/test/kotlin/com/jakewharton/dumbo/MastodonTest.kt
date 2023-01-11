@@ -30,7 +30,7 @@ class MastodonTest {
 			posted = Instant.parse("2011-07-04T06:07:05Z"),
 			language = "en",
 		)
-		val actual = Toot.fromTweet(tweet, emptyMap())
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb())
 		assertEquals(expected, actual)
 	}
 
@@ -56,12 +56,12 @@ class MastodonTest {
 			posted = Instant.parse("2011-07-04T06:07:05Z"),
 			language = "en",
 		)
-		val actual = Toot.fromTweet(tweet, emptyMap())
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb())
 		assertEquals(expected, actual)
 	}
 
 	@Test fun replyMapHit() {
-		val replyMap = mapOf(
+		val replyMap = InMemoryDumboDb(
 			"1" to null,
 			"2" to "1234",
 		)
@@ -83,7 +83,7 @@ class MastodonTest {
 	}
 
 	@Test fun replyMapExplicitNullThrows() {
-		val replyMap = mapOf(
+		val replyMap = InMemoryDumboDb(
 			"1" to null,
 			"2" to "1234",
 		)
@@ -101,7 +101,7 @@ class MastodonTest {
 	}
 
 	@Test fun replyMapMissThrows() {
-		val replyMap = mapOf(
+		val replyMap = InMemoryDumboDb(
 			"1" to null,
 			"2" to "1234",
 		)
@@ -136,7 +136,7 @@ class MastodonTest {
 			posted = Instant.parse("2011-07-13T22:09:53Z"),
 			language = "en",
 		)
-		val actual = Toot.fromTweet(tweet, emptyMap())
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb())
 		assertEquals(expected, actual)
 	}
 }

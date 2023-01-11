@@ -32,7 +32,8 @@ class DumboApp(
 		val tweets = twitterArchive.loadTweets()
 		debug { "Loaded ${tweets.size} tweets" }
 
-		val opLogPath = archiveDir.resolve("dumbo_log.txt")
+		val dumboDb = NioPathDumboDb(archiveDir)
+
 		for (tweet in tweets) {
 			if (tweet.isRetweet) {
 				debug { "[${tweet.id}] Do not keep retweets of tweets from other authors" }
@@ -43,15 +44,13 @@ class DumboApp(
 				continue
 			}
 
-			val opMap = opLogPath.toOpMap()
-			val postedTweetIds = opMap.filterValues { it != null }.keys
-			if (tweet.inReplyToId != null && tweet.inReplyToId !in postedTweetIds) {
+			if (tweet.inReplyToId != null && tweet.inReplyToId !in dumboDb) {
 				debug { "[${tweet.id}] Do not keep replies to tweets which are not my own or which we explicitly skipped" }
 				continue
 			}
 
-			val existingStatus = if (tweet.id in opMap) {
-				val existingTootId = opMap[tweet.id]
+			val existingStatus = if (tweet.id in dumboDb) {
+				val existingTootId = dumboDb[tweet.id]
 				if (existingTootId == null) {
 					debug { "[${tweet.id}] This Tweet was explicitly ignored" }
 					continue
@@ -68,7 +67,7 @@ class DumboApp(
 						print("Remove from log ($inputYes, $inputNo, $inputSkip): ")
 						when (val input = scanner.next()) {
 							inputYes -> {
-								opLogPath.removeId(tweet.id)
+								dumboDb -= tweet.id
 								println("-------")
 								null
 							}
@@ -92,7 +91,7 @@ class DumboApp(
 				null
 			}
 
-			val toot = Toot.fromTweet(tweet, opMap)
+			val toot = Toot.fromTweet(tweet, dumboDb)
 
 			if (existingStatus != null && toot.text == existingStatus.content) {
 				debug { "[${tweet.id}] Existing post content unchanged" }
@@ -132,12 +131,12 @@ class DumboApp(
 							inReplyToId = toot.inReplyToId,
 						)
 
-						opLogPath.appendId(tweet.id, statusEntity.id)
+						dumboDb[tweet.id] = statusEntity.id
 					}
 				}
 
 				inputNo -> {
-					opLogPath.appendId(tweet.id, null)
+					dumboDb[tweet.id] = null
 				}
 
 				inputSkip -> Unit // Nothing to do!

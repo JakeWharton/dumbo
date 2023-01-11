@@ -11,7 +11,7 @@ data class Toot(
 	val inReplyToId: String? = null,
 ) {
 	companion object {
-		fun fromTweet(tweet: Tweet, tootMap: Map<String, String?>): Toot {
+		fun fromTweet(tweet: Tweet, dumboDb: DumboDb): Toot {
 			val text = buildString {
 				var index = 0
 				for (entity in tweet.entities.sortedBy { it.indices.first }) {
@@ -35,7 +35,7 @@ data class Toot(
 			val inReplyToId = if (tweet.inReplyToId == null) {
 				null
 			} else {
-				checkNotNull(tootMap[tweet.inReplyToId]) {
+				checkNotNull(dumboDb[tweet.inReplyToId]) {
 					"Unable to map tweet ${tweet.id} replying to ${tweet.inReplyToId} without tootMap entry"
 				}
 			}
