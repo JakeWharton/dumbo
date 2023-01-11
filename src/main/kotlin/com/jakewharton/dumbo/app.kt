@@ -98,18 +98,14 @@ class DumboApp(
 				continue
 			}
 
-			println("TWEET: ${tweet.url}")
-			println(tweet)
+			println(tweet.toQuickPrettyString())
 			println()
 			if (existingStatus != null) {
-				println("OLD TOOT:")
-				println(existingStatus)
+				println("OLD ${existingStatus.toQuickPrettyString()}")
 				println()
-				println("NEW TOOT:")
-			} else {
-				println("TOOT:")
+				print("NEW ")
 			}
-			println(toot)
+			println(toot.toQuickPrettyString())
 			println()
 			print("Post? ($inputYes, $inputNo, $inputSkip): ")
 			when (val input = scanner.next()) {
