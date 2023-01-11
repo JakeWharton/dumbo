@@ -55,8 +55,6 @@ class MastodonTest {
 			text = "SeriesGuide beta (https://market.android.com/search?q=seriesguide) is now using ActionBarSherlock. Please support and fork!! https://github.com/UweTrottmann/SeriesGuide",
 			posted = Instant.parse("2011-07-04T06:07:05Z"),
 			language = "en",
-			favoriteCount = 0U,
-			reblogCount = 0U,
 		)
 		val actual = Toot.fromTweet(tweet)
 		assertEquals(expected, actual)

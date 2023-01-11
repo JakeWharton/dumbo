@@ -6,8 +6,6 @@ data class Toot(
 	val text: String,
 	val posted: Instant,
 	val language: String,
-	val favoriteCount: UInt,
-	val reblogCount: UInt,
 ) {
 	companion object {
 		fun fromTweet(tweet: Tweet): Toot {
@@ -28,8 +26,6 @@ data class Toot(
 				text = text,
 				posted = tweet.created_at,
 				language = tweet.lang,
-				favoriteCount = tweet.favorite_count,
-				reblogCount = tweet.retweet_count,
 			)
 		}
 	}
