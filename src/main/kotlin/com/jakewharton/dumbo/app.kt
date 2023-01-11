@@ -8,18 +8,11 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.system.exitProcess
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import okhttp3.HttpUrl
-import okio.ByteString.Companion.encodeUtf8
-import okio.buffer
-import okio.source
 
-@OptIn(ExperimentalSerializationApi::class)
 class DumboApp(
 	private val api: MastodonApi,
 ) {
@@ -97,46 +90,39 @@ class DumboApp(
 		debug { "User ID: $id" }
 
 
-		val tweets = archiveDir.resolve("data/tweets.js")
 		val opLogPath = archiveDir.resolve("dumbo_log.txt")
 
-		val source = tweets.source().buffer()
-		check(source.rangeEquals(0, tweetsPrefix)) {
-			"Tweets file did not start with $tweetsPrefix"
-		}
-		source.skip(tweetsPrefix.size.toLong())
+		val twitterArchive = TwitterArchive(archiveDir)
+		val tweets = twitterArchive.loadTweets()
+		debug { "Loaded ${tweets.size} tweets" }
 
-		val entries = Json.decodeFromBufferedSource(ListSerializer(TweetEntry.serializer()), source)
-			.sorted()
-		debug { "Loaded ${entries.size} tweets" }
-
-			for (entry in entries) {
+			for (tweet in tweets) {
 				val opMap = opLogPath.toOpMap()
 				debug { "Op map: $opMap" }
 
 				val seenIdsForReplies = opMap.filterValues { it != null }.keys
 
-				if (entry.tweet.full_text.startsWith("RT @")) {
-					debug { "[${entry.tweet.id}] Do not keep retweets of tweets from other authors" }
+				if (tweet.isRetweet) {
+					debug { "[${tweet.id}] Do not keep retweets of tweets from other authors" }
 					continue
 				}
-				if (entry.tweet.full_text.startsWith("@")) {
-					debug { "[${entry.tweet.id}] Do not keep @mentions to individual accounts" }
+				if (tweet.isMention) {
+					debug { "[${tweet.id}] Do not keep @mentions to individual accounts" }
 					continue
 				}
-				if (entry.tweet.in_reply_to_status_id != null && entry.tweet.in_reply_to_status_id !in seenIdsForReplies) {
-					debug { "[${entry.tweet.id}] Do not keep replies to tweets which are not my own or which we explicitly skipped" }
+				if (tweet.inReplyToId != null && tweet.inReplyToId !in seenIdsForReplies) {
+					debug { "[${tweet.id}] Do not keep replies to tweets which are not my own or which we explicitly skipped" }
 					continue
 				}
-				if (entry.tweet.id in opMap) {
-					debug { "[${entry.tweet.id}] We have already processed this Tweet" }
+				if (tweet.id in opMap) {
+					debug { "[${tweet.id}] We have already processed this Tweet" }
 					continue
 				}
 
-				val toot = Toot.fromTweet(entry.tweet)
+				val toot = Toot.fromTweet(tweet)
 
-				println("TWEET: https://twitter.com/twitter/status/${entry.tweet.id}")
-				println(entry)
+				println("TWEET: ${tweet.url}")
+				println(tweet)
 				println()
 				println("TOOT:")
 				println(toot)
@@ -152,11 +138,11 @@ class DumboApp(
 							createdAt = toot.posted.atOffset(UTC).toString()
 						)
 
-						opLogPath.appendId(entry.tweet.id, statusEntity.id)
+						opLogPath.appendId(tweet.id, statusEntity.id)
 					}
 
 					inputNo -> {
-						opLogPath.appendId(entry.tweet.id, null)
+						opLogPath.appendId(tweet.id, null)
 					}
 
 					inputSkip -> Unit // Nothing to do!
@@ -171,7 +157,6 @@ class DumboApp(
 	}
 
 	private companion object {
-		val tweetsPrefix = "window.YTD.tweets.part0 = ".encodeUtf8()
 		private const val inputYes = "yes"
 		private const val inputNo = "no"
 		private const val inputSkip = "skip"

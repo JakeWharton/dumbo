@@ -1,5 +1,6 @@
 package com.jakewharton.dumbo
 
+import com.jakewharton.dumbo.Tweet.UrlEntity
 import java.time.Instant
 
 data class Toot(
@@ -11,21 +12,25 @@ data class Toot(
 		fun fromTweet(tweet: Tweet): Toot {
 			val text = buildString {
 				var index = 0
-				for (url in tweet.entities.urls) {
-					if (url.indices.first > index) {
-						append(tweet.full_text.substring(index, url.indices.first))
+				for (entity in tweet.entities) {
+					when (entity) {
+						is UrlEntity -> {
+							if (entity.indices.first > index) {
+								append(tweet.text.substring(index, entity.indices.first))
+							}
+							append(entity.url)
+							index = entity.indices.last
+						}
 					}
-					append(url.expanded_url)
-					index = url.indices.last
 				}
-				if (index < tweet.full_text.length) {
-					append(tweet.full_text.substring(index))
+				if (index < tweet.text.length) {
+					append(tweet.text.substring(index))
 				}
 			}
 			return Toot(
 				text = text,
-				posted = tweet.created_at,
-				language = tweet.lang,
+				posted = tweet.createdAt,
+				language = tweet.language,
 			)
 		}
 	}
