@@ -27,7 +27,6 @@ dependencies {
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.4.1'
 	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
 	implementation 'com.squareup.okio:okio:3.3.0'
-	implementation 'org.tomlj:tomlj:1.1.0'
 
 	testImplementation 'junit:junit:4.13.2'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test'
