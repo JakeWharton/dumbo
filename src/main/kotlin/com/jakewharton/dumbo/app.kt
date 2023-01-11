@@ -6,6 +6,7 @@ import java.util.Scanner
 import java.util.UUID
 import kotlin.system.exitProcess
 import okhttp3.HttpUrl
+import retrofit2.HttpException
 
 class DumboApp(
 	private val api: MastodonApi,
@@ -59,7 +60,34 @@ class DumboApp(
 					debug { "[${tweet.id}] This Tweet was already posted and we are not performing edits" }
 					continue
 				}
-				api.getStatus(existingTootId)
+				try {
+					api.getStatus(existingTootId)
+				} catch (e: HttpException) {
+					if (e.code() == 404) {
+						println("Cross-posted tweet (${tweet.url}) was deleted from Mastodon.")
+						print("Remove from log ($inputYes, $inputNo, $inputSkip): ")
+						when (val input = scanner.next()) {
+							inputYes -> {
+								opLogPath.removeId(tweet.id)
+								println("-------")
+								null
+							}
+							inputNo -> {
+								return
+							}
+							inputSkip -> {
+								println("-------")
+								continue
+							}
+							else -> {
+								System.err.println("Unknown input: $input")
+								exitProcess(129)
+							}
+						}
+					} else {
+						throw e
+					}
+				}
 			} else {
 				null
 			}

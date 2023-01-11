@@ -4,6 +4,7 @@ import java.nio.file.Path
 import kotlin.io.path.appendText
 import kotlin.io.path.exists
 import kotlin.io.path.readLines
+import kotlin.io.path.writeLines
 import kotlin.io.path.writeText
 
 fun Path.toOpMap(): Map<String, String?> {
@@ -12,6 +13,10 @@ fun Path.toOpMap(): Map<String, String?> {
 		val split = line.split(" ", limit = 2)
 		split[0] to split.getOrNull(1)
 	}
+}
+
+fun Path.removeId(tweetId: String) {
+	writeLines(readLines().filter { !it.startsWith("$tweetId ") })
 }
 
 fun Path.appendId(tweetId: String, statusId: String?) {
