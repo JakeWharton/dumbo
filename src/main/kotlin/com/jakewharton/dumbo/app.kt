@@ -13,7 +13,8 @@ class DumboApp(
 	suspend fun run(
 		host: HttpUrl,
 		archiveDir: Path,
-		debug: Boolean = false,
+		performEdits: Boolean,
+		debug: Boolean,
 	) {
 		fun debug(body: () -> Any) {
 			if (debug) {
@@ -32,9 +33,6 @@ class DumboApp(
 
 		val opLogPath = archiveDir.resolve("dumbo_log.txt")
 		for (tweet in tweets) {
-			val opMap = opLogPath.toOpMap()
-			val postedTweetIds = opMap.filterValues { it != null }.keys
-
 			if (tweet.isRetweet) {
 				debug { "[${tweet.id}] Do not keep retweets of tweets from other authors" }
 				continue
@@ -43,36 +41,71 @@ class DumboApp(
 				debug { "[${tweet.id}] Do not keep @mentions to individual accounts" }
 				continue
 			}
+
+			val opMap = opLogPath.toOpMap()
+			val postedTweetIds = opMap.filterValues { it != null }.keys
 			if (tweet.inReplyToId != null && tweet.inReplyToId !in postedTweetIds) {
 				debug { "[${tweet.id}] Do not keep replies to tweets which are not my own or which we explicitly skipped" }
 				continue
 			}
-			if (tweet.id in opMap) {
-				debug { "[${tweet.id}] We have already processed this Tweet" }
-				continue
+
+			val existingStatus = if (tweet.id in opMap) {
+				val existingTootId = opMap[tweet.id]
+				if (existingTootId == null) {
+					debug { "[${tweet.id}] This Tweet was explicitly ignored" }
+					continue
+				}
+				if (!performEdits) {
+					debug { "[${tweet.id}] This Tweet was already posted and we are not performing edits" }
+					continue
+				}
+				api.getStatus(existingTootId)
+			} else {
+				null
 			}
 
 			val toot = Toot.fromTweet(tweet, opMap)
 
+			if (existingStatus != null && toot.text == existingStatus.content) {
+				debug { "[${tweet.id}] Existing post content unchanged" }
+				continue
+			}
+
 			println("TWEET: ${tweet.url}")
 			println(tweet)
 			println()
-			println("TOOT:")
+			if (existingStatus != null) {
+				println("OLD TOOT:")
+				println(existingStatus)
+				println()
+				println("NEW TOOT:")
+			} else {
+				println("TOOT:")
+			}
 			println(toot)
 			println()
 			print("Post? ($inputYes, $inputNo, $inputSkip): ")
 			when (val input = scanner.next()) {
 				inputYes -> {
-					val statusEntity = api.createStatus(
-						authorization = authorization,
-						idempotency = UUID.randomUUID().toString(),
-						status = toot.text,
-						language = toot.language,
-						createdAt = toot.posted.atOffset(UTC).toString(),
-						inReplyToId = toot.inReplyToId,
-					)
+					if (existingStatus != null) {
+						api.editStatus(
+							id = existingStatus.id,
+							authorization = authorization,
+							idempotency = UUID.randomUUID().toString(),
+							content = toot.text,
+						)
+					} else {
+						val statusEntity = api.createStatus(
+							authorization = authorization,
+							idempotency = UUID.randomUUID().toString(),
+							content = toot.text,
+							language = toot.language,
+							createdAt = toot.posted.atOffset(UTC).toString(),
+							inReplyToId = toot.inReplyToId,
+						)
 
-					opLogPath.appendId(tweet.id, statusEntity.id)
+						opLogPath.appendId(tweet.id, statusEntity.id)
+					}
 				}
 
 				inputNo -> {

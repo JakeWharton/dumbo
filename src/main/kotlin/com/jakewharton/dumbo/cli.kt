@@ -37,6 +37,9 @@ private class DumboCommand(
 		.help("Mastodon server host")
 		.convert { it.toHttpUrl() }
 		.required()
+	private val edits by option()
+		.help("Edit Mastodon posts if Tweet or mapping changed")
+		.flag()
 	private val archiveDir by argument(name = "ARCHIVE")
 		.help("Directory of extracted Twitter archive")
 		.path(fileSystem = fs, mustExist = true, canBeFile = false)
@@ -64,7 +67,7 @@ private class DumboCommand(
 
 		try {
 			runBlocking {
-				DumboApp(api).run(host, archiveDir, debug = debug)
+				DumboApp(api).run(host, archiveDir, edits, debug)
 			}
 		} finally {
 			okhttp.connectionPool.evictAll()
