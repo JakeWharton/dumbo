@@ -28,6 +28,7 @@ dependencies {
 	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
 	implementation 'com.squareup.okio:okio:3.3.0'
 	implementation 'org.jsoup:jsoup:1.15.3'
+	implementation 'net.peanuuutz:tomlkt:0.1.7'
 
 	testImplementation 'junit:junit:4.13.2'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test'

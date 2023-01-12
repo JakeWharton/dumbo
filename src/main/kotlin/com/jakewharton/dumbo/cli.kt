@@ -40,6 +40,20 @@ private class DumboCommand(
 	private val edits by option()
 		.help("Edit Mastodon posts if Tweet or mapping changed")
 		.flag()
+	private val identityMapping by option("--identities", metavar = "TOML")
+		.help("""
+			|A TOML file mapping Twitter IDs or usernames to Mastodon handles
+			|
+			|Format:
+			|```
+			|[by-id]
+			|123="@foo@example.com"
+			|
+			|[by-name]
+			|bar="@bar@example.com"
+			|```
+			|""".trimMargin())
+		.path(fileSystem = fs, canBeDir = false)
 	private val archiveDir by argument(name = "ARCHIVE")
 		.help("Directory of extracted Twitter archive")
 		.path(fileSystem = fs, mustExist = true, canBeFile = false)
@@ -65,9 +79,12 @@ private class DumboCommand(
 			.build()
 		val api = retrofit.create<MastodonApi>()
 
+		// Parse outside of Clikt converter so exceptions propagate.
+		val identityMapping = identityMapping?.let(IdentityMapping::loadToml) ?: IdentityMapping.Empty
+
 		try {
 			runBlocking {
-				DumboApp(api).run(host, archiveDir, edits, debug)
+				DumboApp(api).run(host, archiveDir, identityMapping, edits, debug)
 			}
 		} finally {
 			okhttp.connectionPool.evictAll()

@@ -54,6 +54,7 @@ class TwitterArchive(
 					}
 					this += it.tweet.entities.user_mentions.map { entity ->
 						MentionEntity(
+							id = entity.id,
 							username = entity.screen_name,
 							indices = entity.indices,
 						)
@@ -100,6 +101,7 @@ data class Tweet(
 		override val indices: IntRange,
 	) : Entity
 	data class MentionEntity(
+		val id: String,
 		val username: String,
 		override val indices: IntRange,
 	) : Entity

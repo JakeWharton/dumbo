@@ -30,7 +30,7 @@ class MastodonTest {
 			posted = Instant.parse("2011-07-04T06:07:05Z"),
 			language = "en",
 		)
-		val actual = Toot.fromTweet(tweet, InMemoryDumboDb())
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), IdentityMapping.Empty)
 		assertEquals(expected, actual)
 	}
 
@@ -56,7 +56,7 @@ class MastodonTest {
 			posted = Instant.parse("2011-07-04T06:07:05Z"),
 			language = "en",
 		)
-		val actual = Toot.fromTweet(tweet, InMemoryDumboDb())
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), IdentityMapping.Empty)
 		assertEquals(expected, actual)
 	}
 
@@ -78,7 +78,7 @@ class MastodonTest {
 			language = "en",
 			inReplyToId = "1234",
 		)
-		val actual = Toot.fromTweet(tweet, replyMap)
+		val actual = Toot.fromTweet(tweet, replyMap, IdentityMapping.Empty)
 		assertEquals(expected, actual)
 	}
 
@@ -95,7 +95,7 @@ class MastodonTest {
 			text = "Just setting up my Dumbo",
 		)
 		val t = assertFailsWith<IllegalStateException> {
-			Toot.fromTweet(tweet, replyMap)
+			Toot.fromTweet(tweet, replyMap, IdentityMapping.Empty)
 		}
 		assertEquals("Unable to map tweet 3 replying to 1 without tootMap entry", t.message)
 	}
@@ -113,7 +113,7 @@ class MastodonTest {
 			text = "Just setting up my Dumbo",
 		)
 		val t = assertFailsWith<IllegalStateException> {
-			Toot.fromTweet(tweet, replyMap)
+			Toot.fromTweet(tweet, replyMap, IdentityMapping.Empty)
 		}
 		assertEquals("Unable to map tweet 4 replying to 3 without tootMap entry", t.message)
 	}
@@ -126,6 +126,7 @@ class MastodonTest {
 			text = "Got psuedo-confirmation from @retomeier that the action bar will not be part of future compat library revs! Good news for ActionBarSherlock.",
 			entities = listOf(
 				MentionEntity(
+					id = "124",
 					username = "retomeier",
 					indices = 29..39,
 				)
@@ -136,7 +137,66 @@ class MastodonTest {
 			posted = Instant.parse("2011-07-13T22:09:53Z"),
 			language = "en",
 		)
-		val actual = Toot.fromTweet(tweet, InMemoryDumboDb())
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), IdentityMapping.Empty)
+		assertEquals(expected, actual)
+	}
+
+	@Test fun mentionsMappedById() {
+		val mapping = IdentityMapping.of(
+			byId = mapOf(
+				"124" to "@retomeier@example.com",
+			),
+			byName = mapOf(
+				"retomeier" to "@nope@nope.nope",
+			),
+		)
+		val tweet = Tweet(
+			id = "91268136095068160",
+			createdAt = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			text = "Got psuedo-confirmation from @retomeier that the action bar will not be part of future compat library revs! Good news for ActionBarSherlock.",
+			entities = listOf(
+				MentionEntity(
+					id = "124",
+					username = "retomeier",
+					indices = 29..39,
+				)
+			),
+		)
+		val expected = Toot(
+			text = "Got psuedo-confirmation from @retomeier@example.com that the action bar will not be part of future compat library revs! Good news for ActionBarSherlock.",
+			posted = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+		)
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), mapping)
+		assertEquals(expected, actual)
+	}
+
+	@Test fun mentionsMappedByName() {
+		val mapping = IdentityMapping.of(
+			byName = mapOf(
+				"retomeier" to "@retomeier@example.com",
+			),
+		)
+		val tweet = Tweet(
+			id = "91268136095068160",
+			createdAt = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			text = "Got psuedo-confirmation from @retomeier that the action bar will not be part of future compat library revs! Good news for ActionBarSherlock.",
+			entities = listOf(
+				MentionEntity(
+					id = "124",
+					username = "retomeier",
+					indices = 29..39,
+				)
+			),
+		)
+		val expected = Toot(
+			text = "Got psuedo-confirmation from @retomeier@example.com that the action bar will not be part of future compat library revs! Good news for ActionBarSherlock.",
+			posted = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+		)
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), mapping)
 		assertEquals(expected, actual)
 	}
 }

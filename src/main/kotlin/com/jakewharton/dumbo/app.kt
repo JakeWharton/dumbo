@@ -14,6 +14,7 @@ class DumboApp(
 	suspend fun run(
 		host: HttpUrl,
 		archiveDir: Path,
+		identityMapping: IdentityMapping,
 		performEdits: Boolean,
 		debug: Boolean,
 	) {
@@ -91,7 +92,7 @@ class DumboApp(
 				null
 			}
 
-			val toot = Toot.fromTweet(tweet, dumboDb)
+			val toot = Toot.fromTweet(tweet, dumboDb, identityMapping)
 
 			if (existingStatus != null && toot.text == existingStatus.content) {
 				debug { "[${tweet.id}] Existing post content unchanged" }

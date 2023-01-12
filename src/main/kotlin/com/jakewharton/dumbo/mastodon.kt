@@ -11,7 +11,11 @@ data class Toot(
 	val inReplyToId: String? = null,
 ) {
 	companion object {
-		fun fromTweet(tweet: Tweet, dumboDb: DumboDb): Toot {
+		fun fromTweet(
+			tweet: Tweet,
+			dumboDb: DumboDb,
+			identityMapping: IdentityMapping,
+		): Toot {
 			val text = buildString {
 				var index = 0
 				for (entity in tweet.entities.sortedBy { it.indices.first }) {
@@ -23,7 +27,7 @@ data class Toot(
 							append(entity.url)
 						}
 						is MentionEntity -> {
-							append("@${entity.username}@twitter.com")
+							append(identityMapping.map(entity.id, entity.username))
 						}
 					}
 					index = entity.indices.last
