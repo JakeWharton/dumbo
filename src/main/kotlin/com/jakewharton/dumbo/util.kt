@@ -7,18 +7,18 @@ fun Any?.toQuickPrettyString(): String {
 	fun Any?.recurse() = toQuickPrettyString().prependIndent("  ").substring(2)
 	return when {
 		this is Collection<*> -> joinToString(
-			separator = ",\n  ",
-			prefix = "[\n  ",
+			separator = ",",
+			prefix = "[",
 			postfix = "\n]",
-			transform = Any?::recurse,
+			transform = { "\n  ${it.recurse()}"},
 		)
 		this == null || !this::class.isData -> toString()
 		else -> this::class.declaredMemberProperties.joinToString(
-			separator = ",\n",
-			prefix = "${this::class.simpleName}(\n",
+			separator = ",",
+			prefix = "${this::class.simpleName}(",
 			postfix = "\n)",
 			transform = {
-				"  ${it.name} = ${(it as KProperty1<Any, Any?>).get(this).recurse()}"
+				"\n  ${it.name} = ${(it as KProperty1<Any, Any?>).get(this).recurse()}"
 			}
 		)
 	}
