@@ -12,6 +12,7 @@ fun Any?.toQuickPrettyString(): String {
 			postfix = "\n]",
 			transform = { "\n  ${it.recurse()}"},
 		)
+		this is CharSequence -> "\"$this\""
 		this == null || !this::class.isData -> toString()
 		else -> this::class.declaredMemberProperties.joinToString(
 			separator = ",",
