@@ -1,12 +1,15 @@
 package com.jakewharton.dumbo
 
+import okhttp3.HttpUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
+import java.nio.file.Files
 import java.nio.file.Path
 import java.time.ZoneOffset.UTC
-import java.util.Scanner
-import java.util.UUID
+import java.util.*
 import kotlin.system.exitProcess
-import okhttp3.HttpUrl
-import retrofit2.HttpException
 
 class DumboApp(
 	private val api: MastodonApi,
@@ -119,6 +122,47 @@ class DumboApp(
 							content = toot.text,
 						)
 					} else {
+						// upload required media
+						val mediaIds = toot.attachments.map { (id, description) ->
+
+							val file = Files.walk(archiveDir.resolve("data/tweets_media/"))
+								.filter { it.fileName.toString().contains(id) }
+								.findFirst()
+								.orElseThrow { IllegalStateException("Media file $id does not exist (tweet ${tweet.id})") }
+
+							// no clue what twitter allows here, just guessing
+							val mimeType = when (val extension = file.toString().substringAfterLast('.', missingDelimiterValue = "").lowercase()) {
+								"jpg", "jpeg" -> "image/jpeg"
+								"png" -> "image/png"
+								"gif" -> "image/gif"
+								"mp4" -> "video/mp4"
+								"webm" -> "video/webm"
+								"mp3" -> "audio/mpeg"
+								"ogg" -> "audio/ogg"
+								"wav" -> "audio/wav"
+								else -> throw IllegalStateException("Unknown media file extension $extension (tweet ${tweet.id})")
+							}
+							val filePart = MultipartBody.Part.createFormData("file", id, file.toFile().asRequestBody(mimeType.toMediaType()))
+
+							val mediaAttachment = api.uploadMedia(
+								authorization = authorization,
+								file = filePart,
+								focus = null,
+								description = description,
+							)
+							val mediaAttachmentId = mediaAttachment.body()!!.id
+
+							// return code of 202 means that the media is still being processed, so we need to wait
+							var returnCode = mediaAttachment.code()
+							while (returnCode == 202) {
+								println("Media $id is still being processed, waiting 5 seconds...")
+								Thread.sleep(5000)
+								returnCode = api.getMedia(mediaAttachmentId).code()
+							}
+
+							mediaAttachmentId
+						}
+
 						val statusEntity = api.createStatus(
 							authorization = authorization,
 							idempotency = UUID.randomUUID().toString(),
@@ -126,6 +170,7 @@ class DumboApp(
 							language = toot.language,
 							createdAt = toot.posted.atOffset(UTC).toString(),
 							inReplyToId = toot.inReplyToId,
+							mediaIds = mediaIds,
 						)
 
 						dumboDb[tweet.id] = statusEntity.id

@@ -22,6 +22,7 @@ import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import okio.ByteString.Companion.encodeUtf8
 import okio.buffer
 import okio.source
+import java.util.*
 
 class TwitterArchive(
 	directory: Path,
@@ -58,6 +59,17 @@ class TwitterArchive(
 							username = entity.screen_name,
 							indices = entity.indices,
 						)
+					}
+
+					// https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/extended-entities
+					if (it.tweet.extended_entities != null) {
+						this += it.tweet.extended_entities.media.map { entity ->
+							Tweet.MediaEntity(
+								url = entity.media_url_https,
+								indices = entity.indices,
+								description = entity.additional_media_info?.description,
+							)
+						}
 					}
 				}
 			)
@@ -105,6 +117,11 @@ data class Tweet(
 		val username: String,
 		override val indices: IntRange,
 	) : Entity
+	data class MediaEntity(
+		val url: String,
+		val description: String?,
+		override val indices: IntRange,
+	) : Entity
 }
 
 /**
@@ -136,6 +153,7 @@ private data class ArchiveTweetEntry(
 		val favorited: Boolean,
 		val full_text: String,
 		val lang: String,
+		val contributors: List<String> = emptyList(),
 		val in_reply_to_status_id: String? = null,
 		val in_reply_to_status_id_str: String? = null,
 		val in_reply_to_user_id: String? = null,
@@ -271,7 +289,7 @@ private data class ArchiveTweetEntry(
 }
 
 private object TwitterTimestampSerializer : KSerializer<Instant> {
-	private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss ZZ yyyy")
+	private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss ZZ yyyy", Locale.ENGLISH)
 	override val descriptor = PrimitiveSerialDescriptor("twitter_timestamp", STRING)
 
 	override fun deserialize(decoder: Decoder): Instant {

@@ -3,12 +3,16 @@ package com.jakewharton.dumbo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import okhttp3.MultipartBody
 import org.jsoup.Jsoup
+import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 
 interface MastodonApi {
@@ -46,6 +50,7 @@ interface MastodonApi {
 		@Field("language") language: String?,
 		@Field("created_at") createdAt: String,
 		@Field("in_reply_to_id") inReplyToId: String?,
+		@Field("media_ids[]") mediaIds: List<String>?,
 	): StatusEntity
 
 	@GET("api/v1/statuses/{id}")
@@ -61,6 +66,20 @@ interface MastodonApi {
 		@Path("id") id: String,
 		@Field("status") content: String,
 	): StatusEntity
+
+	@Multipart
+	@POST("api/v2/media")
+	suspend fun uploadMedia(
+		@Header("Authorization") authorization: String,
+		@Part file: MultipartBody.Part,
+		@Part("description") description: String?,
+		@Part("focus") focus: String?,
+	): Response<MediaAttachment>
+
+	@GET("/api/v1/media/{id}")
+	suspend fun getMedia(
+		@Path("id") id: String,
+	): Response<MediaAttachment>
 }
 
 @Serializable
@@ -96,3 +115,8 @@ data class StatusEntity(
 		}
 	}
 }
+
+@Serializable
+data class MediaAttachment(
+	val id: String,
+)
