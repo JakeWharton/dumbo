@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.ZoneOffset.UTC
 import java.util.*
+import kotlin.streams.toList
 import kotlin.system.exitProcess
 
 class DumboApp(
@@ -128,7 +129,19 @@ class DumboApp(
 							val file = Files.walk(archiveDir.resolve("data/tweets_media/"))
 								.filter { it.fileName.toString().contains(id) }
 								.findFirst()
-								.orElseThrow { IllegalStateException("Media file $id does not exist (tweet ${tweet.id})") }
+								.or {
+									// last resort, find file by tweet id, which only works if the tweet only has one media attachment
+									val list = Files.walk(archiveDir.resolve("data/tweets_media/"))
+										.filter { it.fileName.toString().contains(tweet.id) }
+										.toList()
+									if (list.size == 1) {
+										Optional.of(list[0])
+									} else {
+										Optional.empty()
+									}
+								}.orElseThrow {
+									IllegalStateException("Could not find media file for tweet ${tweet.id} and media id $id")
+								}
 
 							// no clue what twitter allows here, just guessing
 							val mimeType = when (val extension = file.toString().substringAfterLast('.', missingDelimiterValue = "").lowercase()) {
