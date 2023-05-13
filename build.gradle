@@ -25,7 +25,7 @@ dependencies {
 	implementation 'org.jetbrains.kotlin:kotlin-reflect'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.5.1'
-	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0'
+	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1'
 	implementation 'com.squareup.okio:okio:3.3.0'
 	implementation 'org.jsoup:jsoup:1.16.1'
 	implementation 'net.peanuuutz:tomlkt:0.1.8'
