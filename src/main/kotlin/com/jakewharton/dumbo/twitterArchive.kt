@@ -6,6 +6,7 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -272,7 +273,7 @@ private data class ArchiveTweetEntry(
 }
 
 private object TwitterTimestampSerializer : KSerializer<Instant> {
-	private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss ZZ yyyy")
+	private val formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss ZZ yyyy", Locale.US)
 	override val descriptor = PrimitiveSerialDescriptor("twitter_timestamp", STRING)
 
 	override fun deserialize(decoder: Decoder): Instant {
