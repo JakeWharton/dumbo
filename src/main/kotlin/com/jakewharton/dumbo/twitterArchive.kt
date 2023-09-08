@@ -136,6 +136,7 @@ private data class ArchiveTweetEntry(
 		val favorited: Boolean,
 		val full_text: String,
 		val lang: String,
+		val contributors: List<String> = emptyList(),
 		val in_reply_to_status_id: String? = null,
 		val in_reply_to_status_id_str: String? = null,
 		val in_reply_to_user_id: String? = null,
