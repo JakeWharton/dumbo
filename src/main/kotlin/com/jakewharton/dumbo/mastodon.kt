@@ -1,5 +1,6 @@
 package com.jakewharton.dumbo
 
+import com.jakewharton.dumbo.Tweet.MediaEntity
 import com.jakewharton.dumbo.Tweet.MentionEntity
 import com.jakewharton.dumbo.Tweet.UrlEntity
 import java.time.Instant
@@ -9,7 +10,13 @@ data class Toot(
 	val posted: Instant,
 	val language: String,
 	val inReplyToId: String? = null,
+	val media: List<Media> = emptyList(),
 ) {
+	data class Media(
+		val id: String,
+		val filename: String,
+	)
+
 	companion object {
 		fun fromTweet(
 			tweet: Tweet,
@@ -29,11 +36,28 @@ data class Toot(
 						is MentionEntity -> {
 							append(identityMapping.map(entity.id, entity.username))
 						}
+						is MediaEntity -> {
+							// If the text is already non-empty then it will have contained a space
+							// between the existing text and the URL to the media. Remove that space.
+							if (isNotEmpty()) {
+								check(this[lastIndex] == ' ')
+								deleteCharAt(lastIndex)
+							}
+							// Nothing to append as text!
+						}
 					}
 					index = entity.indices.last
 				}
 				if (index < tweet.text.length) {
 					append(tweet.text.substring(index))
+				}
+			}
+			val media = buildList {
+				for (entity in tweet.entities.filterIsInstance<MediaEntity>()) {
+					this += Media(
+						id = entity.id,
+						filename = entity.filename,
+					)
 				}
 			}
 			val inReplyToId = if (tweet.inReplyToId == null) {
@@ -48,6 +72,7 @@ data class Toot(
 				posted = tweet.createdAt,
 				language = tweet.language,
 				inReplyToId = inReplyToId,
+				media = media,
 			)
 		}
 	}

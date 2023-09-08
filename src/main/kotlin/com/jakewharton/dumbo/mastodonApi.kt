@@ -3,12 +3,18 @@ package com.jakewharton.dumbo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonObject
+import okhttp3.MultipartBody
 import org.jsoup.Jsoup
+import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 
 interface MastodonApi {
@@ -46,6 +52,7 @@ interface MastodonApi {
 		@Field("language") language: String?,
 		@Field("created_at") createdAt: String,
 		@Field("in_reply_to_id") inReplyToId: String?,
+		@Field("media_ids[]") mediaIds: List<String>,
 	): StatusEntity
 
 	@GET("api/v1/statuses/{id}")
@@ -54,13 +61,28 @@ interface MastodonApi {
 	): StatusEntity
 
 	@FormUrlEncoded
-	@POST("api/v1/statuses/{id}")
+	@PUT("api/v1/statuses/{id}")
 	suspend fun editStatus(
 		@Header("Authorization") authorization: String,
 		@Header("Idempotency-Key") idempotency: String,
 		@Path("id") id: String,
 		@Field("status") content: String,
+		@Field("media_ids[]") mediaIds: List<String>,
 	): StatusEntity
+
+	@Multipart
+	@POST("api/v2/media")
+	suspend fun uploadMedia(
+		@Header("Authorization") authorization: String,
+		@Part file: MultipartBody.Part,
+		@Part("description") description: String,
+	): Response<UploadMediaEntity>
+
+	@GET("api/v1/media/{id}")
+	suspend fun getMedia(
+		@Header("Authorization") authorization: String,
+		@Path("id") id: String,
+	): Response<Void>
 }
 
 @Serializable
@@ -85,6 +107,7 @@ data class AccountEntity(
 data class StatusEntity(
 	val id: String,
 	@SerialName("content") val rawContent: String,
+	val media_attachments: List<JsonObject> = emptyList(),
 ) {
 	@Transient
 	val content: String = run {
@@ -96,3 +119,8 @@ data class StatusEntity(
 		}
 	}
 }
+
+@Serializable
+data class UploadMediaEntity(
+	val id: String,
+)

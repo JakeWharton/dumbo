@@ -9,7 +9,8 @@ import okhttp3.HttpUrl
 import retrofit2.HttpException
 
 class DumboApp(
-	private val api: MastodonApi,
+	private val mastodonApi: MastodonApi,
+	private val twimgApi: TwimgApi,
 ) {
 	suspend fun run(
 		host: HttpUrl,
@@ -26,8 +27,10 @@ class DumboApp(
 
 		val scanner = Scanner(System.`in`)
 
-		val authenticator = MastodonAuthenticator(archiveDir, host, api, scanner)
+		val authenticator = MastodonAuthenticator(archiveDir, host, mastodonApi, scanner)
 		val authorization = authenticator.obtain()
+
+		val mediaDb = MediaDb(archiveDir, mastodonApi, authorization, twimgApi)
 
 		val twitterArchive = TwitterArchive(archiveDir)
 		val tweets = twitterArchive.loadTweets()
@@ -61,7 +64,7 @@ class DumboApp(
 					continue
 				}
 				try {
-					api.getStatus(existingTootId)
+					mastodonApi.getStatus(existingTootId)
 				} catch (e: HttpException) {
 					if (e.code() == 404) {
 						println("Cross-posted tweet (${tweet.url}) was deleted from Mastodon.")
@@ -94,8 +97,8 @@ class DumboApp(
 
 			val toot = Toot.fromTweet(tweet, dumboDb, identityMapping)
 
-			if (existingStatus != null && toot.text == existingStatus.content) {
-				debug { "[${tweet.id}] Existing post content unchanged" }
+			if (existingStatus != null && isUpToDate(toot, existingStatus)) {
+				debug { "[${tweet.id}] Existing post unchanged" }
 				continue
 			}
 
@@ -111,21 +114,31 @@ class DumboApp(
 			print("Post? ($inputYes, $inputNo, $inputSkip): ")
 			when (val input = scanner.next()) {
 				inputYes -> {
+					// TODO Only upload media if media is what changed.
+					val attachmentIds = buildList {
+						for ((index, media) in toot.media.withIndex()) {
+							debug { "[${tweet.id}] Uploading attachment ${index + 1} of ${toot.media.size}" }
+							this += mediaDb.uploadMedia(media.id, media.filename)
+						}
+					}
+
 					if (existingStatus != null) {
-						api.editStatus(
+						mastodonApi.editStatus(
 							id = existingStatus.id,
 							authorization = authorization,
 							idempotency = UUID.randomUUID().toString(),
 							content = toot.text,
+							mediaIds = attachmentIds,
 						)
 					} else {
-						val statusEntity = api.createStatus(
+						val statusEntity = mastodonApi.createStatus(
 							authorization = authorization,
 							idempotency = UUID.randomUUID().toString(),
 							content = toot.text,
 							language = toot.language,
 							createdAt = toot.posted.atOffset(UTC).toString(),
 							inReplyToId = toot.inReplyToId,
+							mediaIds = attachmentIds,
 						)
 
 						dumboDb[tweet.id] = statusEntity.id
@@ -145,6 +158,17 @@ class DumboApp(
 
 			println("-------")
 		}
+	}
+
+	private fun isUpToDate(toot: Toot, status: StatusEntity): Boolean {
+		if (toot.text != status.content) {
+			return false
+		}
+		if (toot.media.size != status.media_attachments.size) {
+			return false
+		}
+		// TODO Compare image binaries?
+		return true
 	}
 
 	private companion object {

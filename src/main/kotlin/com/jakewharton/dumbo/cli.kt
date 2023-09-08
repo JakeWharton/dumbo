@@ -15,7 +15,6 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -58,7 +57,6 @@ private class DumboCommand(
 		.help("Directory of extracted Twitter archive")
 		.path(fileSystem = fs, mustExist = true, canBeFile = false)
 
-	@OptIn(ExperimentalSerializationApi::class)
 	override fun run() {
 		val okhttp = OkHttpClient.Builder()
 			.apply {
@@ -67,24 +65,32 @@ private class DumboCommand(
 				}
 			}
 			.build()
+
 		val json = Json {
 			ignoreUnknownKeys = true
 		}
 		val converterFactory = json.asConverterFactory("application/json".toMediaType())
 
-		val retrofit = Retrofit.Builder()
+		val mastodonApi = Retrofit.Builder()
 			.client(okhttp)
 			.baseUrl(host)
 			.addConverterFactory(converterFactory)
 			.build()
-		val api = retrofit.create<MastodonApi>()
+			.create<MastodonApi>()
+
+		val twimgApi = Retrofit.Builder()
+			.client(okhttp)
+			.baseUrl("https://pbs.twimg.com")
+			.build()
+			.create<TwimgApi>()
 
 		// Parse outside of Clikt converter so exceptions propagate.
 		val identityMapping = identityMapping?.let(IdentityMapping::loadToml) ?: IdentityMapping.Empty
 
+		val dumboApp = DumboApp(mastodonApi, twimgApi)
 		try {
 			runBlocking {
-				DumboApp(api).run(host, archiveDir, identityMapping, edits, debug)
+				dumboApp.run(host, archiveDir, identityMapping, edits, debug)
 			}
 		} finally {
 			okhttp.connectionPool.evictAll()

@@ -1,5 +1,6 @@
 package com.jakewharton.dumbo
 
+import com.jakewharton.dumbo.Tweet.MediaEntity
 import com.jakewharton.dumbo.Tweet.MentionEntity
 import com.jakewharton.dumbo.Tweet.UrlEntity
 import java.nio.file.Path
@@ -60,6 +61,13 @@ class TwitterArchive(
 							indices = entity.indices,
 						)
 					}
+					this += it.tweet.entities.media.map { entity ->
+						MediaEntity(
+							id = entity.id,
+							filename = entity.media_url.substringAfterLast("/"),
+							indices = entity.indices,
+						)
+					}
 				}
 			)
 		}.sorted()
@@ -104,6 +112,11 @@ data class Tweet(
 	data class MentionEntity(
 		val id: String,
 		val username: String,
+		override val indices: IntRange,
+	) : Entity
+	data class MediaEntity(
+		val id: String,
+		val filename: String,
 		override val indices: IntRange,
 	) : Entity
 }
