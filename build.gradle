@@ -42,6 +42,7 @@ dependencies {
 	implementation 'com.squareup.okio:okio:3.5.0'
 	implementation 'org.jsoup:jsoup:1.16.1'
 	implementation 'net.peanuuutz:tomlkt:0.2.0'
+	implementation 'org.apache.tika:tika-core:2.9.0'
 
 	testImplementation 'junit:junit:4.13.2'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test'

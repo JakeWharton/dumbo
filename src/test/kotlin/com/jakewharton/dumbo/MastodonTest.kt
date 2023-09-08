@@ -199,4 +199,109 @@ class MastodonTest {
 		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), mapping)
 		assertEquals(expected, actual)
 	}
+
+	@Test fun mediaOnlySingle() {
+		val tweet = Tweet(
+			id = "91268136095068160",
+			createdAt = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			text = "http://example.com",
+			entities = listOf(
+				Tweet.MediaEntity(
+					id = "124",
+					filename = "example.png",
+					indices = 0..18,
+				),
+			),
+		)
+		val expected = Toot(
+			text = "",
+			posted = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			media = listOf(
+				Toot.Media(
+					id = "124",
+					filename = "example.png",
+				),
+			),
+		)
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), IdentityMapping.Empty)
+		assertEquals(expected, actual)
+	}
+
+	@Test fun mediaOnlyMany() {
+		val tweet = Tweet(
+			id = "91268136095068160",
+			createdAt = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			text = "http://example.com http://example.net http://example.org",
+			entities = listOf(
+				Tweet.MediaEntity(
+					id = "124",
+					filename = "example1.png",
+					indices = 0..18,
+				),
+				Tweet.MediaEntity(
+					id = "125",
+					filename = "example2.png",
+					indices = 19..37,
+				),
+				Tweet.MediaEntity(
+					id = "126",
+					filename = "example3.png",
+					indices = 38..56,
+				),
+			),
+		)
+		val expected = Toot(
+			text = "",
+			posted = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			media = listOf(
+				Toot.Media(
+					id = "124",
+					filename = "example1.png",
+				),
+				Toot.Media(
+					id = "125",
+					filename = "example2.png",
+				),
+				Toot.Media(
+					id = "126",
+					filename = "example3.png",
+				),
+			),
+		)
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), IdentityMapping.Empty)
+		assertEquals(expected, actual)
+	}
+
+	@Test fun textWithMedia() {
+		val tweet = Tweet(
+			id = "91268136095068160",
+			createdAt = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			text = "Some text goes here! http://example.com",
+			entities = listOf(
+				Tweet.MediaEntity(
+					id = "124",
+					filename = "example.png",
+					indices = 21..39,
+				),
+			),
+		)
+		val expected = Toot(
+			text = "Some text goes here!",
+			posted = Instant.parse("2011-07-13T22:09:53Z"),
+			language = "en",
+			media = listOf(
+				Toot.Media(
+					id = "124",
+					filename = "example.png",
+				),
+			),
+		)
+		val actual = Toot.fromTweet(tweet, InMemoryDumboDb(), IdentityMapping.Empty)
+		assertEquals(expected, actual)
+	}
 }
