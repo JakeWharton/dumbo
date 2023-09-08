@@ -58,11 +58,3 @@ class NioPathDumboDb(
 		}
 	}
 }
-
-fun Path.toOpMap(): Map<String, String?> {
-	if (!exists()) return emptyMap()
-	return readLines().associate { line ->
-		val split = line.split(" ", limit = 2)
-		split[0] to split.getOrNull(1)
-	}
-}
