@@ -14,9 +14,62 @@ In order to write statuses which occur in the past, a `created_at` parameter is 
 
 ### Modifying Official Mastodon
 
-The following changes should be applied to the Mastodon app.
+The following patches should be applied to the Mastodon web app.
+
+<details>
+<summary>Mastodon 4.x</summary>
+Note: These diffs were produced against Mastodon v4.1.7.
+Slight changes may be needed for other 4.x versions.
+
+`app/controllers/api/v1/statuses_controller.rb`:
+```diff
+@@ -61,4 +61,5 @@
+       visibility: status_params[:visibility],
+       language: status_params[:language],
++      created_at: status_params[:created_at],
+       scheduled_at: status_params[:scheduled_at],
+       application: doorkeeper_token.application,
+@@ -130,4 +130,5 @@
+       :language,
+       :scheduled_at,
++      :created_at,
+       media_ids: [],
+       media_attributes: [
+```
+
+`app/services/post_status_service.rb`:
+```diff
+@@ -58,4 +58,5 @@
+     @visibility   = @options[:visibility] || @account.user&.setting_default_privacy
+     @visibility   = :unlisted if @visibility&.to_sym == :public && @account.silenced?
++    @created_at   = @options[:created_at]&.to_datetime
+     @scheduled_at = @options[:scheduled_at]&.to_datetime
+     @scheduled_at = nil if scheduled_in_the_past?
+@@ -99,6 +99,8 @@
+     Trends.tags.register(@status)
+     LinkCrawlWorker.perform_async(@status.id)
+-    DistributionWorker.perform_async(@status.id)
+-    ActivityPub::DistributionWorker.perform_async(@status.id)
++    if not @options[:created_at]
++      DistributionWorker.perform_async(@status.id)
++      ActivityPub::DistributionWorker.perform_async(@status.id)
++    end
+     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
+   end
+@@ -174,4 +174,5 @@
+       visibility: @visibility,
+       language: valid_locale_cascade(@options[:language], @account.user&.preferred_posting_language, I18n.default_locale),
++      created_at: @created_at,
+       application: @options[:application],
+       rate_limit: @options[:with_rate_limit],
+```
+
+</details>
+
+<details>
+<summary>Mastodon 3.x</summary>
 Note: These diffs were produced against Mastodon v3.5.3.
-If you are using Mastodon v4 (or newer) you may need to adjust them.
+Slight changes may be needed for other 3.x versions.
 
 `app/controllers/api/v1/statuses_controller.rb`:
 ```diff
@@ -54,6 +107,7 @@ If you are using Mastodon v4 (or newer) you may need to adjust them.
        application: @options[:application],
        rate_limit: @options[:with_rate_limit],
 ```
+</details>
 
 Apply these patches and then restart the app or container.
 
