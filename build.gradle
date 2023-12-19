@@ -46,7 +46,7 @@ dependencies {
 
 	testImplementation 'junit:junit:4.13.2'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test'
-	testImplementation 'com.google.truth:truth:1.1.5'
+	testImplementation 'com.google.truth:truth:1.2.0'
 }
 
 repositories {
