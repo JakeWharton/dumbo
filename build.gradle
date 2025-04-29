@@ -40,7 +40,7 @@ dependencies {
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.8.1'
 	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2'
 	implementation 'com.squareup.okio:okio:3.11.0'
-	implementation 'org.jsoup:jsoup:1.19.1'
+	implementation 'org.jsoup:jsoup:1.20.1'
 	implementation 'net.peanuuutz:tomlkt:0.2.0'
 	implementation 'org.apache.tika:tika-core:3.1.0'
 
