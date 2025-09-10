@@ -1,9 +1,11 @@
 package com.jakewharton.dumbo
 
+import assertk.assertFailure
+import assertk.assertions.hasMessage
+import assertk.assertions.isInstanceOf
 import com.jakewharton.dumbo.Tweet.MentionEntity
 import com.jakewharton.dumbo.Tweet.UrlEntity
 import java.time.Instant
-import kotlin.test.assertFailsWith
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -94,10 +96,10 @@ class MastodonTest {
 			language = "en",
 			text = "Just setting up my Dumbo",
 		)
-		val t = assertFailsWith<IllegalStateException> {
+		assertFailure {
 			Toot.fromTweet(tweet, replyMap, IdentityMapping.Empty)
-		}
-		assertEquals("Unable to map tweet 3 replying to 1 without tootMap entry", t.message)
+		}.isInstanceOf<IllegalStateException>()
+			.hasMessage("Unable to map tweet 3 replying to 1 without tootMap entry")
 	}
 
 	@Test fun replyMapMissThrows() {
@@ -112,10 +114,10 @@ class MastodonTest {
 			language = "en",
 			text = "Just setting up my Dumbo",
 		)
-		val t = assertFailsWith<IllegalStateException> {
+		assertFailure {
 			Toot.fromTweet(tweet, replyMap, IdentityMapping.Empty)
-		}
-		assertEquals("Unable to map tweet 4 replying to 3 without tootMap entry", t.message)
+		}.isInstanceOf<IllegalStateException>()
+			.hasMessage("Unable to map tweet 4 replying to 3 without tootMap entry")
 	}
 
 	@Test fun mentionsReplacedWithMastodonConvention() {

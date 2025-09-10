@@ -12,7 +12,6 @@ import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.path
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import kotlinx.coroutines.runBlocking
@@ -23,6 +22,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level.BASIC
 import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
 
 fun main(vararg args: String) {
