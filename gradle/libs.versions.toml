@@ -20,7 +20,7 @@ retrofit-converter-kotlinxSerialization = { module = "com.squareup.retrofit2:con
 okhttp-core = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-loggingInterceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
 
-tika-core = "org.apache.tika:tika-core:3.2.2"
+tika-core = "org.apache.tika:tika-core:3.2.3"
 
 clikt = "com.github.ajalt.clikt:clikt:5.0.3"
 okio = "com.squareup.okio:okio:3.16.0"
