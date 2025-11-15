@@ -23,7 +23,7 @@ okhttp-loggingInterceptor = { module = "com.squareup.okhttp3:logging-interceptor
 tika-core = "org.apache.tika:tika-core:3.2.3"
 
 clikt = "com.github.ajalt.clikt:clikt:5.0.3"
-okio = "com.squareup.okio:okio:3.16.2"
+okio = "com.squareup.okio:okio:3.16.3"
 jsoup = "org.jsoup:jsoup:1.21.2"
 tomlkt = "net.peanuuutz:tomlkt:0.2.0"
 
