@@ -24,7 +24,7 @@ tika-core = "org.apache.tika:tika-core:3.3.0"
 
 clikt = "com.github.ajalt.clikt:clikt:5.1.0"
 okio = "com.squareup.okio:okio:3.17.0"
-jsoup = "org.jsoup:jsoup:1.22.1"
+jsoup = "org.jsoup:jsoup:1.22.2"
 tomlkt = "net.peanuuutz:tomlkt:0.2.0"
 
 junit = "junit:junit:4.13.2"
